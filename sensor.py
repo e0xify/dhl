@@ -54,7 +54,7 @@ SUBSCRIPTION_SCHEMA = vol.All(
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
-DHL_API_track_shipments_URL = "https://api-eu.dhl.com/track/shipments?language=en&trackingNumber={}"
+DHL_API_track_shipments_URL = "https://api-eu.dhl.com/track/shipments?&trackingNumber={}"
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
@@ -79,7 +79,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         package_id = service.data.get(ATTR_PACKAGE_ID).upper()
 
         if package_id in registrations:
-            raise ValueError("Package allready tracked")
+            raise ValueError("Package already tracked")
 
         registrations.append(package_id)
 
@@ -183,6 +183,7 @@ class DHLSensor(RestoreEntity):
         response = response.json()
 
         if "shipments" not in response:
+            raise ValueError("API returned unknown json structure")
             _LOGGER.error("API returned unknown json structure")
             return
 
@@ -211,10 +212,13 @@ class DHLSensor(RestoreEntity):
                     self._attributes["status countryCode"] = sla.get("countryCode", "UNKNOWN")
                     self._attributes["status addressLocality"] = sla.get("addressLocality", "UNKNOWN")
                     self._attributes["status timestamp"] = sla.get("timestamp", "UNKNOWN")
-                except:
+                except Exception as e:
+                    _LOGGER.error("Error processing shipment: %s", e)
                     pass
-            else:
-                _LOGGER.info("Found other id {}".format(shipment["id"]))
+                break  # Exit the loop after finding the right shipment
+        else:
+            _LOGGER.info("No shipment found with ID: %s", self._package_id)
+
 
     async def async_added_to_hass(self):
         """Run when entity about to be added to hass."""
