@@ -54,7 +54,7 @@ SUBSCRIPTION_SCHEMA = vol.All(
 
 ENTITY_ID_FORMAT = DOMAIN + ".{}"
 
-DHL_API_track_shipments_URL = "https://api-eu.dhl.com/track/shipments?&trackingNumber={}"
+DHL_API_track_shipments_URL = "https://api-eu.dhl.com/track/shipments?language=en&trackingNumber={}"
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
@@ -183,7 +183,6 @@ class DHLSensor(RestoreEntity):
         response = response.json()
 
         if "shipments" not in response:
-            raise ValueError("API returned unknown json structure")
             _LOGGER.error("API returned unknown json structure")
             return
 
